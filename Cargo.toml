@@ -1,0 +1,19 @@
+[package]
+name = "artifice"
+version = "0.1.0"
+authors = ["Chris Fung <aergonaut@gmail.com>"]
+
+[dependencies]
+structopt = "0.2.6"
+toml = "0.4.5"
+serde = "1.0.36"
+serde_derive = "1.0.36"
+failure = "0.1.1"
+
+[lib]
+name = "art"
+path = "src/lib.rs"
+
+[[bin]]
+name = "art"
+path = "src/main.rs"
