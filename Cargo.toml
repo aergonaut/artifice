@@ -9,6 +9,8 @@ toml = "0.4.5"
 serde = "1.0.36"
 serde_derive = "1.0.36"
 failure = "0.1.1"
+log = "0.4.1"
+fern = { version = "0.5.5", features = ["colored"] }
 
 [lib]
 name = "art"

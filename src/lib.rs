@@ -1,4 +1,6 @@
 extern crate failure;
+#[macro_use]
+extern crate log;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -6,20 +8,33 @@ extern crate serde_derive;
 extern crate structopt;
 extern crate toml;
 
+use std::path::PathBuf;
+
 use failure::Error;
 
 mod config;
 
+/// The global struct representing the whole executable.
+///
+/// Flags listed here are global to the executable, while flags specific to a subcommand are
+/// contained in the `Command` struct.
 #[derive(Debug, StructOpt)]
 #[structopt(name = "art")]
 pub struct Art {
     /// Verbose output.
     #[structopt(long = "verbose", short = "v", parse(from_occurrences))]
     verbose: u64,
+    /// Config file. Defaults to $HOME/.artifice.toml
+    #[structopt(long = "config", short = "c")]
+    config: Option<PathBuf>,
     #[structopt(subcommand)]
-    pub command: Command
+    command: Command
 }
 
+/// The core enum describing the different available subcommands.
+///
+/// Each variant of `Command` represents a different subcommand of the executable. The variants
+/// contain the flags and arguments passed to the subcommand specifically.
 #[derive(Debug, StructOpt)]
 pub enum Command {
     /// Start work on a new ticket. Specify the JIRA issue key directly, or choose from a list of
@@ -32,13 +47,23 @@ pub enum Command {
     }
 }
 
-pub fn run_command(cmd: &Command) -> Result<(), Error> {
-    let config = config::Config::get()?;
-    match *cmd {
+pub fn run_command(opts: &Art) -> Result<(), Error> {
+    let config = config::Config::open(&opts.config)?;
+    match opts.command {
         Command::Start { ref ticket } => start_command(ticket, &config)
     }
 }
 
 fn start_command(ticket: &Option<String>, config: &config::Config) -> Result<(), Error> {
+    Ok(())
+}
 
+impl Art {
+    pub fn verbosity(&self) -> log::LevelFilter {
+        match self.verbose {
+            x if x == 0 => log::LevelFilter::Error,
+            x if x == 1 => log::LevelFilter::Warn,
+            _ => log::LevelFilter::Info
+        }
+    }
 }
