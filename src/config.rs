@@ -13,6 +13,7 @@ pub(crate) struct Config {
 
 #[derive(Debug, Deserialize, Default)]
 pub(crate) struct JiraConfig {
+    pub host: String,
     pub username: String,
     pub password: String
 }

@@ -1,18 +1,22 @@
 extern crate failure;
 #[macro_use]
 extern crate log;
+extern crate reqwest;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate structopt;
 extern crate toml;
+extern crate url;
 
 use std::path::PathBuf;
 
 use failure::Error;
 
 mod config;
+mod commands;
+mod jira;
 
 /// The global struct representing the whole executable.
 ///
@@ -50,12 +54,8 @@ pub enum Command {
 pub fn run_command(opts: &Art) -> Result<(), Error> {
     let config = config::Config::open(&opts.config)?;
     match opts.command {
-        Command::Start { ref ticket } => start_command(ticket, &config)
+        Command::Start { ref ticket } => commands::start_command(ticket, &config)
     }
-}
-
-fn start_command(ticket: &Option<String>, config: &config::Config) -> Result<(), Error> {
-    Ok(())
 }
 
 impl Art {
