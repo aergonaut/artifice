@@ -5,6 +5,7 @@ extern crate reqwest;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
 #[macro_use]
 extern crate structopt;
 extern crate toml;
@@ -29,10 +30,10 @@ pub struct Art {
     #[structopt(long = "verbose", short = "v", parse(from_occurrences))]
     verbose: u64,
     /// Config file. Defaults to $HOME/.artifice.toml
-    #[structopt(long = "config", short = "c")]
+    #[structopt(long = "config", short = "c", parse(from_os_str))]
     config: Option<PathBuf>,
     #[structopt(subcommand)]
-    command: Command
+    command: Command,
 }
 
 /// The core enum describing the different available subcommands.
@@ -47,14 +48,14 @@ pub enum Command {
     Start {
         /// JIRA ticket to start
         #[structopt(name = "TICKET")]
-        ticket: Option<String>
-    }
+        ticket: Option<String>,
+    },
 }
 
 pub fn run_command(opts: &Art) -> Result<(), Error> {
     let config = config::Config::open(&opts.config)?;
     match opts.command {
-        Command::Start { ref ticket } => commands::start_command(ticket, &config)
+        Command::Start { ref ticket } => commands::start_command(ticket, &config),
     }
 }
 
@@ -63,7 +64,7 @@ impl Art {
         match self.verbose {
             x if x == 0 => log::LevelFilter::Error,
             x if x == 1 => log::LevelFilter::Warn,
-            _ => log::LevelFilter::Info
+            _ => log::LevelFilter::Info,
         }
     }
 }

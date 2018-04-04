@@ -1,31 +1,32 @@
 use std;
 use std::io::prelude::*;
-use std::path::{ PathBuf };
+use std::path::PathBuf;
 
-use failure::{ Error, ResultExt };
+use failure::{Error, ResultExt};
 use failure::err_msg;
 use toml;
 
 #[derive(Debug, Deserialize, Default)]
 pub(crate) struct Config {
-    pub jira: JiraConfig
+    pub jira: JiraConfig,
 }
 
 #[derive(Debug, Deserialize, Default)]
 pub(crate) struct JiraConfig {
     pub host: String,
-    pub username: String,
-    pub password: String
+    pub email: String,
+    pub token: String,
 }
 
 impl Config {
     /// Open a config file at the given path.
     pub fn open(path: &Option<PathBuf>) -> Result<Config, Error> {
         let config_path = match path {
-            Some(path) => path.clone(),
-            None => Config::default_config()?
+            &Some(ref path) => path.clone(),
+            &None => Config::default_config()?,
         };
-        let mut config_file = std::fs::File::open(config_path.clone()).context(format!("Could not open {:?}", config_path))?;
+        let mut config_file = std::fs::File::open(config_path.clone())
+            .context(format!("Could not open {:?}", config_path))?;
         let mut buffer = String::new();
         config_file.read_to_string(&mut buffer)?;
 

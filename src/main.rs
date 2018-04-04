@@ -4,7 +4,7 @@ extern crate fern;
 extern crate log;
 extern crate structopt;
 
-use fern::colors::{ Color, ColoredLevelConfig };
+use fern::colors::{Color, ColoredLevelConfig};
 use structopt::StructOpt;
 
 fn main() {
@@ -25,12 +25,13 @@ fn main() {
         })
         .level(opt.verbosity())
         .chain(std::io::stdout())
-        .apply().unwrap();
+        .apply()
+        .unwrap();
 
     info!("Starting art");
     match art::run_command(&opt) {
-        Ok(_) => {},
-        Err(error) => error!("{}", error)
+        Ok(_) => {}
+        Err(error) => error!("{}", error),
     }
     info!("Art exited");
 }
