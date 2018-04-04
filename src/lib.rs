@@ -1,6 +1,8 @@
 extern crate failure;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate prettytable;
 extern crate reqwest;
 extern crate serde;
 #[macro_use]
@@ -15,8 +17,8 @@ use std::path::PathBuf;
 
 use failure::Error;
 
-mod config;
 mod commands;
+mod config;
 mod jira;
 
 /// The global struct representing the whole executable.
