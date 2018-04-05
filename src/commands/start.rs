@@ -23,26 +23,29 @@ fn start_ticket(ticket: &str, config: &config::Config) -> Result<(), Error> {
     )?;
 
     let data = response.json::<json::Value>()?;
-    let new_branch_name = derive_branch_name(ticket, &data)
-        .ok_or_else(|| format_err!("Could not derive branch name"))?;
+    let new_branch_name = derive_branch_name(ticket, &data);
     info!("creating {}", new_branch_name);
 
     Ok(())
 }
 
-fn derive_branch_name(ticket: &str, data: &json::Value) -> Option<String> {
+/// Derive the branch name from the ticket.
+///
+/// If a Code Propagation subtask is found associated to the ticket, that subtask's key will be
+/// appended to the branch name. Otherwise, the branch name will just have the ticket's key.
+fn derive_branch_name(ticket: &str, data: &json::Value) -> String {
     if let Some(subtasks) = data["fields"]["subtasks"].as_array() {
         for subtask in subtasks {
             if let Some(issuetype) = subtask["fields"]["issuetype"]["id"].as_str() {
                 if issuetype == jira::PROPAGATION_SUBTASK_ISSUETYPE {
                     if let Some(subtask_key) = subtask["key"].as_str() {
-                        return Some(format!("master_{}_{}", ticket, subtask_key));
+                        return format!("master_{}_{}", ticket, subtask_key);
                     }
                 }
             }
         }
     }
-    None
+    format!("master_{}", ticket)
 }
 
 fn show_open_issues(config: &config::Config) -> Result<(), Error> {
