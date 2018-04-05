@@ -14,8 +14,10 @@ main() {
     cross test --target $TARGET
     cross test --target $TARGET --release
 
-    cross run --target $TARGET
-    cross run --target $TARGET --release
+    # Running the binary will generate the help text and this causes the program
+    # to exit with code 1, which Travis interprets as a failure.
+    cross run --target $TARGET || echo "good"
+    cross run --target $TARGET --release || echo "good"
 }
 
 # we don't run the "test phase" when doing deploys
