@@ -4,6 +4,11 @@
 
 **NOTE:** This is a work in progress! It probably won't be useful to you!
 
+## Supported Platforms
+
+`artifice` supports all of the Rust [Tier 1 platforms](https://forge.rust-lang.org/platform-support.html)
+in addition to FreeBSD and NetBSD.
+
 ## Configuration
 
 `artifice` can be configured using a configuration file. By default this file is
