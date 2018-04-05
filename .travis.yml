@@ -85,7 +85,7 @@ matrix:
 
 before_install:
   - set -e
-  - 'if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export CFLAGS="-I/usr/local/opt/openssl/include $CFLAGS" LDFLAGS="-L/usr/local/opt/openssl/lib $LDFLAGS"; fi'
+  - 'if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && brew install openssl; fi'
   - rustup self update
 
 install:
