@@ -7,7 +7,9 @@ pub const OPEN_ISSUES_JQL: &'static str = r#"
 assignee = currentUser() and Sprint in openSprints() and type not in subTaskIssueTypes()
 "#;
 
-pub(crate) fn serach_issues(
+pub const PROPAGATION_SUBTASK_ISSUETYPE: &'static str = "10600";
+
+pub(crate) fn search_issues(
     jql: &str,
     host: &str,
     username: &str,
@@ -21,6 +23,23 @@ pub(crate) fn serach_issues(
         .basic_auth(username, Some(password))
         .header(Accept(vec![qitem(mime::APPLICATION_JSON)]))
         .query(&[("jql", jql), ("fields", "key,summary")])
+        .send()?;
+    Ok(response)
+}
+
+pub(crate) fn get_issue(
+    key: &str,
+    host: &str,
+    username: &str,
+    password: &str,
+) -> Result<reqwest::Response, Error> {
+    let base_url = reqwest::Url::parse(host)?;
+    let request_url = base_url.join(&format!("/rest/api/2/issue/{}", key))?;
+    let client = reqwest::Client::new();
+    let response = client
+        .get(request_url)
+        .basic_auth(username, Some(password))
+        .header(Accept(vec![qitem(mime::APPLICATION_JSON)]))
         .send()?;
     Ok(response)
 }

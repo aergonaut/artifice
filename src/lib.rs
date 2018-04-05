@@ -1,4 +1,6 @@
+#[macro_use]
 extern crate failure;
+extern crate git2;
 #[macro_use]
 extern crate log;
 #[macro_use]

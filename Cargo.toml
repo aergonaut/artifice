@@ -15,6 +15,7 @@ fern = { version = "0.5.5", features = ["colored"] }
 reqwest = "0.8.5"
 url = "1.7.0"
 prettytable-rs = "0.6.7"
+git2 = "0.7.1"
 
 [lib]
 name = "art"
