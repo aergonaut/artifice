@@ -1,12 +1,15 @@
 # `artifice`
 
+[![Build Status](https://travis-ci.org/aergonaut/artifice.svg?branch=master)](https://travis-ci.org/aergonaut/artifice)
+[![Build status](https://ci.appveyor.com/api/projects/status/eq5ltn785vsbo0ol/branch/master?svg=true)](https://ci.appveyor.com/project/aergonaut/artifice/branch/master)
+
 `artifice` is a command-line productivity tool.
 
 **NOTE:** This is a work in progress! It probably won't be useful to you!
 
 ## Supported Platforms
 
-`artifice` supports all of the Rust [Tier 1 platforms](https://forge.rust-lang.org/platform-support.html).
+`artifice` supports Linux, macOS, and Windows systems.
 
 ## Configuration
 
