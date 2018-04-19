@@ -1,5 +1,6 @@
 use config;
 use failure::Error;
+use failure::err_msg;
 use jira;
 use prettytable::Table;
 use serde_json as json;
@@ -24,8 +25,9 @@ fn start_ticket(ticket: &str, config: &config::Config) -> Result<(), Error> {
 
     let data = response.json::<json::Value>()?;
     let new_branch_name = derive_branch_name(ticket, &data);
-    info!("creating {}", new_branch_name);
-
+    let repo = git2::Repository::discover(std::env::current_dir()?)?;
+    let new_branch = create_branch(&repo, &new_branch_name)?;
+    let _ = checkout_branch(&repo, &new_branch)?;
     Ok(())
 }
 
@@ -48,6 +50,7 @@ fn derive_branch_name(ticket: &str, data: &json::Value) -> String {
     format!("master_{}", ticket)
 }
 
+/// Print the user's current open JIRA issues as a table to STDOUT
 fn show_open_issues(config: &config::Config) -> Result<(), Error> {
     let jql = jira::OPEN_ISSUES_JQL;
     let mut response = jira::search_issues(
@@ -72,4 +75,27 @@ fn show_open_issues(config: &config::Config) -> Result<(), Error> {
     table.printstd();
 
     Ok(())
+}
+
+/// Create a new Git branch with the given `branch_name`
+fn create_branch<'repo>(
+    repo: &'repo git2::Repository,
+    branch_name: &str,
+) -> Result<git2::Branch<'repo>, Error> {
+    let head_ref = repo.head()?;
+    let head_commit = head_ref.peel_to_commit()?;
+    info!("creating {}", branch_name);
+    let new_branch = repo.branch(branch_name, &head_commit, false)?;
+    Ok(new_branch)
+}
+
+/// Checkout the given branch.
+fn checkout_branch(repo: &git2::Repository, branch: &git2::Branch) -> Result<(), Error> {
+    if let Some(branch_name) = branch.name()? {
+        let oid = repo.refname_to_id(branch_name)?;
+        let treeish = repo.find_tree(oid)?;
+        repo.checkout_tree(treeish.as_object(), None)?;
+        return Ok(repo.set_head(branch_name)?);
+    }
+    Err(err_msg("Branch has no name"))
 }
