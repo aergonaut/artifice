@@ -9,6 +9,7 @@ use toml;
 #[derive(Debug, Deserialize, Default)]
 pub(crate) struct Config {
     pub jira: JiraConfig,
+    pub verbosity: u32,
 }
 
 #[derive(Debug, Deserialize, Default)]

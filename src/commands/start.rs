@@ -14,7 +14,11 @@ pub(crate) fn command(ticket: &Option<String>, config: &config::Config) -> Resul
     }
 }
 
-/// Start working on a ticket
+/// Start working on a ticket.
+///
+/// This first fetches the ticket's information from JIRA and then tries to derive the branch name
+/// from the ticket and subtask keys. It tries to create the branch if it does not exist and then
+/// tries to switch the current repository to the branch.
 fn start_ticket(ticket: &str, config: &config::Config) -> Result<(), Error> {
     let mut response = jira::get_issue(
         ticket,
@@ -78,6 +82,8 @@ fn show_open_issues(config: &config::Config) -> Result<(), Error> {
 }
 
 /// Create a new Git branch with the given `branch_name`
+///
+/// Returns the `Branch` object.
 fn create_branch<'repo>(
     repo: &'repo git2::Repository,
     branch_name: &str,
@@ -89,13 +95,15 @@ fn create_branch<'repo>(
     Ok(new_branch)
 }
 
-/// Checkout the given branch.
+/// Checkout the given branch
 fn checkout_branch(repo: &git2::Repository, branch: &git2::Branch) -> Result<(), Error> {
     if let Some(branch_name) = branch.name()? {
-        let oid = repo.refname_to_id(branch_name)?;
-        let treeish = repo.find_tree(oid)?;
+        let ref_name = format!("refs/heads/{}", branch_name);
+        let reference = branch.get();
+        let treeish = reference.peel_to_tree()?;
+        info!("checking out {}", branch_name);
         repo.checkout_tree(treeish.as_object(), None)?;
-        return Ok(repo.set_head(branch_name)?);
+        return Ok(repo.set_head(&ref_name)?);
     }
     Err(err_msg("Branch has no name"))
 }
