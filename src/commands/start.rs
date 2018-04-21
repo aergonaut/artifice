@@ -20,16 +20,12 @@ pub(crate) fn command(ticket: &Option<String>, config: &config::Config) -> Resul
 /// from the ticket and subtask keys. It tries to create the branch if it does not exist and then
 /// tries to switch the current repository to the branch.
 fn start_ticket(ticket: &str, config: &config::Config) -> Result<(), Error> {
-    let mut response = jira::get_issue(
-        ticket,
-        &config.jira.host,
-        &config.jira.email,
-        &config.jira.token,
-    )?;
+    let jira_client = jira::Jira::new(&config.jira);
+    let mut response = jira_client.get_issue(ticket)?;
 
     let data = response.json::<json::Value>()?;
-    let new_branch_name = derive_branch_name(ticket, &data);
     let repo = git2::Repository::discover(std::env::current_dir()?)?;
+    let new_branch_name = derive_branch_name(&repo, ticket, &data)?;
     let new_branch = create_branch(&repo, &new_branch_name)?;
     let _ = checkout_branch(&repo, &new_branch)?;
     Ok(())
@@ -39,30 +35,46 @@ fn start_ticket(ticket: &str, config: &config::Config) -> Result<(), Error> {
 ///
 /// If a Code Propagation subtask is found associated to the ticket, that subtask's key will be
 /// appended to the branch name. Otherwise, the branch name will just have the ticket's key.
-fn derive_branch_name(ticket: &str, data: &json::Value) -> String {
+fn derive_branch_name<'repo>(
+    repo: &'repo git2::Repository,
+    ticket: &str,
+    data: &json::Value,
+) -> Result<String, Error> {
+    let current_branch_name = get_current_branch_name(repo)?;
     if let Some(subtasks) = data["fields"]["subtasks"].as_array() {
         for subtask in subtasks {
             if let Some(issuetype) = subtask["fields"]["issuetype"]["id"].as_str() {
                 if issuetype == jira::PROPAGATION_SUBTASK_ISSUETYPE {
                     if let Some(subtask_key) = subtask["key"].as_str() {
-                        return format!("master_{}_{}", ticket, subtask_key);
+                        return Ok(format!(
+                            "{}_{}_{}",
+                            current_branch_name, ticket, subtask_key
+                        ));
                     }
                 }
             }
         }
     }
-    format!("master_{}", ticket)
+    Ok(format!("{}_{}", current_branch_name, ticket))
+}
+
+fn get_current_branch_name<'repo>(repo: &'repo git2::Repository) -> Result<String, Error> {
+    let head_ref = repo.head()?;
+    if head_ref.is_branch() {
+        head_ref
+            .shorthand()
+            .ok_or_else(|| format_err!("Branch name is not UTF-8"))
+            .map(|s| s.to_owned())
+    } else {
+        return Err(format_err!("HEAD is not a branch"));
+    }
 }
 
 /// Print the user's current open JIRA issues as a table to STDOUT
 fn show_open_issues(config: &config::Config) -> Result<(), Error> {
+    let jira_client = jira::Jira::new(&config.jira);
     let jql = jira::OPEN_ISSUES_JQL;
-    let mut response = jira::search_issues(
-        &jql,
-        &config.jira.host,
-        &config.jira.email,
-        &config.jira.token,
-    )?;
+    let mut response = jira_client.search_issues(&jql)?;
 
     let mut table = Table::new();
     table.add_row(row!["Key", "Summary"]);
@@ -90,8 +102,11 @@ fn create_branch<'repo>(
 ) -> Result<git2::Branch<'repo>, Error> {
     let head_ref = repo.head()?;
     let head_commit = head_ref.peel_to_commit()?;
-    info!("creating {}", branch_name);
-    let new_branch = repo.branch(branch_name, &head_commit, false)?;
+    let new_branch = repo.find_branch(branch_name, git2::BranchType::Local)
+        .or_else(|_| {
+            info!("creating branch {}", branch_name);
+            repo.branch(branch_name, &head_commit, false)
+        })?;
     Ok(new_branch)
 }
 
